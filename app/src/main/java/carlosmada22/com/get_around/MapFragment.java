@@ -235,6 +235,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
         mDBAdapter.open();
 
 
+
+
         id = new ArrayList<Integer>();
         nombres = new ArrayList<String>();
         latitudes = new ArrayList<Double>();
@@ -280,24 +282,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
             colour = markerColor(categorias.get(i));
             gMap.addMarker(new MarkerOptions().position(location).title(name).snippet(desc).icon(colour));
         }
-        /*mCursor.moveToFirst();
-        if(mCursor.getCount() > 0) do {
-            latitude = mCursor.getDouble(mCursor
-                    .getColumnIndex(Marker_Tabla.MarkerEntry.LAT));
-            longitude = mCursor.getDouble(mCursor
-                    .getColumnIndex(Marker_Tabla.MarkerEntry.LON));
-            name = mCursor.getString(mCursor
-                    .getColumnIndex(Marker_Tabla.MarkerEntry.NAME));
-            desc = mCursor.getString(mCursor
-                    .getColumnIndex(Marker_Tabla.MarkerEntry.DESCRIPTION));
-
-            LatLng location = new LatLng(latitude, longitude);
-            Log.i("Ubicaciones",location.toString());
-
-            gMap.addMarker(new MarkerOptions().position(location).title(name));
-
-
-        } while (mCursor.moveToNext());*/
 
         gMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
@@ -469,162 +453,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                         onFabClick(mMarker);
                     }
                 });
-                /*AlertDialog.Builder mBuilder = new AlertDialog.Builder(getContext());
-                View view = getActivity().getLayoutInflater().inflate(R.layout.dialog_edit, null);
-                TextView tvName = (TextView) view.findViewById(R.id.tvName);
-                etName = (EditText) view.findViewById(R.id.etName);
-                etDescription = (EditText) view.findViewById(R.id.etDescription);
-                spinner = (Spinner) view.findViewById(R.id.spColor);
-                ImageButton bDelete = (ImageButton) view.findViewById(R.id.Bsearch);
-                Button bModify = (Button) view.findViewById(R.id.btnModify);
-                Button bCancel = (Button) view.findViewById(R.id.btnCancel);
-                tvName.setText(mMarker.getTitle());
-                etName.setText(mMarker.getTitle());
-                etDescription.setText(mMarker.getSnippet());
-                spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
-
-                    @Override
-                    public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                        switch (i) {
-                            case 0:
-                                categoria = "Alojamiento";
-                                color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE);
-                                break;
-                            case 1:
-                                categoria = "Restaurante";
-                                color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED);
-                                break;
-                            case 2:
-                                categoria = "Comercio";
-                                color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE);
-                                break;
-                            case 3:
-                                categoria = "Estacion de servicio";
-                                color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN);
-                                break;
-                            case 4:
-                                categoria = "Estacion de tren/autobus";
-                                color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ROSE);
-                                break;
-                            case 5:
-                                categoria = "Aeropuerto";
-                                color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE);
-                                break;
-                            case 6:
-                                categoria = "Museo";
-                                color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET);
-                                break;
-                            case 7:
-                                categoria = "Iglesia";
-                                color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW);
-                                break;
-                            case 8:
-                                categoria = "Geografico";
-                                color = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
-                                break;
-
-                        }
-                    }
-
-                    @Override
-                    public void onNothingSelected(AdapterView<?> adapterView) {
-
-                    }
-                });
-                mBuilder.setView(view);
-                final AlertDialog dialog = mBuilder.create();
-                dialog.show();
-
-                bModify.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        if(!etName.getText().toString().isEmpty()){
-                            MarkerOptions marker = new MarkerOptions()
-                                    .position(mMarker.getPosition())
-                                    .title(etName.getText().toString())
-                                    .snippet(etDescription.getText().toString())
-                                    .icon(color);
-                            mMarker.remove();
-                            gMap.addMarker(marker);
-                            Toast.makeText(getContext(),
-                                    "Punto de interés añadido",
-                                    Toast.LENGTH_SHORT).show();
-                            updateMarkerDB(mMarker.getPosition());
-                            //addMarkerDB(marker.getPosition());- Metodo modificar en base de datos
-                            dialog.dismiss();
-                        }else{
-                            Toast.makeText(getContext(),
-                                    "Campo *Nombre* obligatorio",
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-                bDelete.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        AlertDialog.Builder build = new AlertDialog.Builder(getContext());
-                        build.setTitle("¿Deseas eliminar el punto de interés?");
-                        build.setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialogo, int which) {
-                                mMarker.remove();
-                                mDBAdapter.deleteMarker(mMarker.getPosition().latitude,mMarker.getPosition().longitude);
-                                dialogo.dismiss();
-                                dialog.dismiss();
-                                //mDBAdapter.deleteMarker() --> Metodo eliminar marker base de datos
-                            } });
 
 
-                        build.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialogo, int which) {
-                                dialogo.dismiss();
-                            } });
-                        build.show();
-                    }
-                });*/
 
                 return false;
             }
         });
+
+        onResume();
     }
 
-
-//                mBuilder.setPositiveButton("Login", new DialogInterface.OnClickListener() {
-//                    @Override
-//                    public void onClick(DialogInterface dialogInterface, int i) {
-//
-//                    }
-//                });
-//
-//                mBuilder.setNegativeButton("Dismiss", new DialogInterface.OnClickListener() {
-//                    @Override
-//                    public void onClick(DialogInterface dialogInterface, int i) {
-//                        dialogInterface.dismiss();
-//                    }
-//                });
-
-
-//                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
-//                    @Override
-//                    public void onClick(View view) {
-//                        if (!mEmail.getText().toString().isEmpty() && !mPassword.getText().toString().isEmpty()) {
-//                            Toast.makeText(MainActivity.this,
-//                                    R.string.success_login_msg,
-//                                    Toast.LENGTH_SHORT).show();
-//                            startActivity(new Intent(MainActivity.this, Main2Activity.class));
-//                            dialog.dismiss();
-//                        } else {
-//                            Toast.makeText(MainActivity.this,
-//                                    R.string.error_login_msg,
-//                                    Toast.LENGTH_SHORT).show();
-//                        }
-//                    }
-//                });
-
-
-                /*MarkerOptions marker = new MarkerOptions()
-                        .position(new LatLng(point.latitude, point.longitude))
-                        .title("New Marker");
-                gMap.addMarker(marker);*/
 
     public static GoogleMap getgMap() {
         return gMap;
@@ -1202,50 +1040,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
             @Override
             public void onSnapshotReady(Bitmap snapshot)
             {
-                // TODO Auto-generated method stub
                 bitmap = snapshot;
-                /*File folder = new File(getContext().getApplicationContext().getFilesDir().getAbsolutePath() + "/Maps/");
-                if (!folder.exists()) {
-                    folder.mkdirs();
-                }
-                String fileName = "Map"+ nMap + ".jpg";
-                //File file = new File (new File(getContext().getApplicationContext().getFilesDir().getAbsolutePath() + "/Maps/"), fileName);
-                nMap++;
-                if(createDirectoryAndSaveFile(bitmap,fileName)){
-                    Toast.makeText(getContext(),
-                            "Descarga realizada",
-                            Toast.LENGTH_SHORT).show();
-                }
-                else{
-                    Toast.makeText(getContext(),
-                            "Descarga fallida",
-                            Toast.LENGTH_SHORT).show();
-                }
-                    /*String saved = MediaStore.Images.Media.insertImage(getContext().getApplicationContext().getContentResolver(), bitmap, "" + nMap + ".jpg", "screen");
-                    //addImageToGallery(getContext().getApplicationContext().getFilesDir().getAbsolutePath() + "/Maps", getContext().getApplicationContext());
-                    if(saved!=null){
-                        Toast.makeText(getContext(),
-                                "Descarga realizada",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                    else{
-                        Toast.makeText(getContext(),
-                                "Error en la descarga",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                } else {
-                    // Do something else on failure
-                }
-
-                /*String filepath = getContext().getApplicationContext().getFilesDir().getAbsolutePath().toString() + "/Maps/";
-                filepath += "Map.jpg";
-                //File myPath = new File(extr, "Map.jpg");
-                FileOutputStream fos = null;*/
-                    /*fos = new FileOutputStream(new File(filepath));
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
-                    fos.flush();
-                    fos.close();*/
-
             }
         };
 
@@ -1292,16 +1087,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
         nueva_lista.show();
     }
 
-    /*public static void addImageToGallery(final String filePath, final Context context) {
-
-        ContentValues values = new ContentValues();
-
-        values.put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis());
-        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-        values.put(MediaStore.MediaColumns.DATA, filePath);
-
-        context.getContentResolver().insert(MediaStore.Images.Media.INTERNAL_CONTENT_URI, values);
-    }*/
 
     private boolean createDirectoryAndSaveFile(Bitmap imageToSave, String fileName) {
 
@@ -1331,23 +1116,4 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
     public void onBackPressed() {
         getActivity().moveTaskToBack(true);
     }
-    /*private void loadMarkers() {
-        new MarkersLoadTask().execute();
-    }
-    private class MarkersLoadTask extends AsyncTask<Void, Void, Cursor> {
-
-        @Override
-        protected Cursor doInBackground(Void... voids) {
-            return mDBAdapter.getMarkerLista();
-        }
-        @Override
-        protected void onPostExecute(Cursor cursor) {
-            if (cursor != null && cursor.getCount() > 0) {
-                cursor.moveToFirst();
-            } else {
-                // Mostrar empty state
-            }
-        }
-
-    }*/
 }
