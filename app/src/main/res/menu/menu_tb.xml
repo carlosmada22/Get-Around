@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="carlosmada22.com.get_around.MainActivity">
+
+
+    <item android:id="@+id/show"
+        android:title="Mostrar/Ocultar marcadores"
+        android:orderInCategory="100"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_action_show_all"
+        android:numericShortcut='h'/>
+
+    <item android:id="@+id/type"
+        android:title="Tipo de Mapa"
+        android:orderInCategory="100"
+        android:icon="@drawable/ic_action_change"
+        app:showAsAction="ifRoom"/>
+
+    <item android:id="@+id/list"
+        android:title="Mapas descargados"
+        android:orderInCategory="100"
+        android:icon="@drawable/ic_action_map_list"
+        app:showAsAction="ifRoom"/>
+
+
+</menu>

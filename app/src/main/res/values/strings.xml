@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Get-Around</string>
+
+    <string-array name="spinner_item">
+        <item>Alojamiento</item>
+        <item>Restaurante</item>
+        <item>Comercio</item>
+        <item>Estación de servicio</item>
+        <item>Estación de tren/autobús</item>
+        <item>Aeropuerto</item>
+        <item>Museo</item>
+        <item>Iglesia</item>
+        <item>Geográfico</item>
+
+    </string-array>
+    <string name="title_activity_add_edit_list">Añadir/Editar Lista</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
