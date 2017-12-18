@@ -1,4 +1,4 @@
-package carlosmada22.com.get_around;
+package carlosmada22.com.get_around.Adaptadores;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -6,10 +6,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CursorAdapter;
-import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import carlosmada22.com.get_around.BaseDeDatos.DBAdapter;
+import carlosmada22.com.get_around.BaseDeDatos.Lista_Tabla;
+import carlosmada22.com.get_around.R;
 
 /**
  * Created by carlosmada22 on 2/10/17.
@@ -50,20 +51,8 @@ public class ListCursorAdapter extends CursorAdapter {
         // Setup.
         nameText.setText(name);
         numberText.setText("Puntos de interés: " + nMarkers);
-
-        LinearLayout click = (LinearLayout) view.findViewById(R.id.click);
     }
 
-    /*@Override
-    public boolean isEnabled(int position)
-    {
-        return true;
-    }
-    /*@Override
-    protected void onContentChanged() {
-        super.onContentChanged();
-        notifyDataSetChanged();
-    }*/
     @Override
     public boolean areAllItemsEnabled()
     {

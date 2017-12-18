@@ -1,4 +1,4 @@
-package carlosmada22.com.get_around;
+package carlosmada22.com.get_around.ImageLoader;
 
 /**
  * Created by root on 10/31/17.

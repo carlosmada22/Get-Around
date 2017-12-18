@@ -1,7 +1,7 @@
-package carlosmada22.com.get_around;
+package carlosmada22.com.get_around.Adaptadores;
 
 /**
- * Created by root on 10/31/17.
+ * Created by carlosmada22 on 2/10/17.
  */
 
 import android.app.Activity;
@@ -12,6 +12,9 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import carlosmada22.com.get_around.ImageLoader.ImageLoader;
+import carlosmada22.com.get_around.R;
 
 public class MapAdapter extends BaseAdapter{
     private Activity activity;

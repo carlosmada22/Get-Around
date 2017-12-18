@@ -1,4 +1,4 @@
-package carlosmada22.com.get_around;
+package carlosmada22.com.get_around.BaseDeDatos;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -88,12 +88,14 @@ public class Marker_Tabla {
         return sqlDB.update(NOMBRE_TABLA,values,where,args);
     }
 
-    public void llenarTabla(SQLiteDatabase sqLiteDatabase) {
-        sqLiteDatabase.execSQL(DELETE_TABLE);
-        crearMarker("Mi casa", 43.537811, -5.653821, "Mi casa en Gijon", 1);
-        crearMarker("Hotel ABBA Gijon", 43.541397, -5.643160, "Hotel ABBA en la playa de Gijón", 1);
-        crearMarker("A feira do pulpo", 43.538371, -5.648429, "Restaurante Gallego del barrio de la Arena, Gijon", 2);
-        crearMarker("Parroquia San Antonio de Padua", 43.538029, -5.653342, "Iglesia de los Franciscanos Capuchinos", 3);
+
+    public Cursor getMarker(double lat, double lon){
+        String[] columns = {ColumnsMarker._ID, ColumnsMarker.NAME, ColumnsMarker.LAT,
+                ColumnsMarker.LON, ColumnsMarker.DESCRIPTION, ColumnsMarker.CATEGORY};
+        String[] args = {String.valueOf(lat), String.valueOf(lon)};
+        String where = ColumnsMarker.LAT + "=? AND " + ColumnsMarker.LON + "=?";
+        Cursor c = sqlDB.query(NOMBRE_TABLA, columns, where, args, null, null, null);
+        return c;
     }
 
     public int getIdMarker(double lat, double lon){

@@ -1,8 +1,8 @@
-package carlosmada22.com.get_around;
+package carlosmada22.com.get_around.Adaptadores;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.support.v4.content.CursorLoader;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,7 +12,12 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.net.URI;
+import carlosmada22.com.get_around.BaseDeDatos.DBAdapter;
+import carlosmada22.com.get_around.BaseDeDatos.Marker_Tabla;
+import carlosmada22.com.get_around.Vista.MarkerListFragment;
+import carlosmada22.com.get_around.R;
+import carlosmada22.com.get_around.Vista.ListFragment;
+
 
 /**
  * Created by root on 10/3/17.
@@ -20,8 +25,7 @@ import java.net.URI;
 public class MarkerListCursorAdapter extends CursorAdapter {
 
     private DBAdapter mDBAdapter;
-    double latitud;
-    double longitud;
+
 
     public MarkerListCursorAdapter(Context context, Cursor c) {
         super(context, c, 0);
@@ -42,22 +46,23 @@ public class MarkerListCursorAdapter extends CursorAdapter {
         mDBAdapter.open();
         TextView nameText = (TextView) view.findViewById(R.id.marker_name);
         TextView descriptionText = (TextView) view.findViewById(R.id.marker_description);
-        TextView positionText = (TextView) view.findViewById(R.id.marker_position);
+        TextView categoryText = (TextView) view.findViewById(R.id.marker_category);
         ImageButton deleteButton = (ImageButton) view.findViewById(R.id.b_delete);
 
         // Get valores.
         String name = cursor.getString(cursor.getColumnIndex(Marker_Tabla.ColumnsMarker.NAME));
         String description = cursor.getString(cursor.getColumnIndex(Marker_Tabla.ColumnsMarker.DESCRIPTION));
-        String lat = cursor.getString(cursor.getColumnIndex(Marker_Tabla.ColumnsMarker.LAT));
-        String lon = cursor.getString(cursor.getColumnIndex(Marker_Tabla.ColumnsMarker.LON));
+
+        int category = cursor.getInt(cursor.getColumnIndex(Marker_Tabla.ColumnsMarker.CATEGORY));
+        String categoria = markerCategory(category);
         final String id_marker = cursor.getString(cursor.getColumnIndex(Marker_Tabla.ColumnsMarker.ID));
         final int idlist = MarkerListFragment.getNumLista();
         final String id_lista = "" + idlist;
-        String position = lat + "\n" + lon ;
+        String laCategoria = "Categoría: "  + categoria;
         // Setup.
         nameText.setText(name);
         descriptionText.setText(description);
-        positionText.setText(position);
+        categoryText.setText(laCategoria );
         deleteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -75,6 +80,44 @@ public class MarkerListCursorAdapter extends CursorAdapter {
             }
         });
 
+    }
+
+    public static String markerCategory(int categoria) {
+        String category = "";
+        switch (categoria) {
+            case 0:
+                category = "Alojamiento";
+                break;
+            case 1:
+                category = "Restaurante";
+                break;
+            case 2:
+                category = "Comercio";
+                break;
+            case 3:
+                category = "Estación de servicio";
+                break;
+            case 4:
+                category = "Estación de tren/autobús";
+                break;
+            case 5:
+                category = "Aeropuerto";
+                break;
+            case 6:
+                category = "Museo";
+                break;
+            case 7:
+                category = "Iglesia";
+                break;
+            case 8:
+                category = "Geográfico";
+                break;
+            default:
+                category = "Alojamiento";
+
+
+        }
+        return category;
     }
 
 }

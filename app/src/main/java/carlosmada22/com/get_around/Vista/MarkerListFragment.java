@@ -1,28 +1,28 @@
-package carlosmada22.com.get_around;
+package carlosmada22.com.get_around.Vista;
 
 
-import android.content.Intent;
 import android.database.Cursor;
-import android.database.MatrixCursor;
+
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.AppCompatActivity;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
+
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import carlosmada22.com.get_around.Adaptadores.MarkerListCursorAdapter;
+import carlosmada22.com.get_around.BaseDeDatos.DBAdapter;
+import carlosmada22.com.get_around.R;
 
 
 /**
- * A simple {@link Fragment} subclass.
+ * Created by carlosmada22 on 2/10/17.
  */
 public class MarkerListFragment extends Fragment {
 
@@ -39,9 +39,7 @@ public class MarkerListFragment extends Fragment {
         return numLista;
     }
 
-    public void setNumLista(int numLista) {
-        this.numLista = numLista;
-    }
+
 
     public MarkerListFragment() {
         // Required empty public constructor
@@ -77,9 +75,9 @@ public class MarkerListFragment extends Fragment {
         mDBAdapter = new DBAdapter(getActivity());
         mDBAdapter.open();
 
-        //final int id_marker = mMarkerListAdapter.getId_marker();
 
-        Intent intent = getActivity().getIntent();
+
+
         numLista = getActivity().getIntent().getExtras().getInt("numLista");
         Log.i("id_lista_fragment", "" + numLista);
         nameLista = getActivity().getIntent().getExtras().getString("nameLista");
@@ -92,17 +90,7 @@ public class MarkerListFragment extends Fragment {
         //Carga de datos
         loadMarkers();
 
-        /*bDelete = (ImageButton) getActivity().findViewById(R.id.b_delete);
-        bDelete.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mDBAdapter.deleteMarkerFromList(id_marker,numLista);
-                loadMarkers();
-                Toast.makeText(getContext(),
-                        "Punto de interés eliminado",
-                        Toast.LENGTH_SHORT).show();
-            }
-        });*/
+
         return root;
     }
 
@@ -129,7 +117,7 @@ public class MarkerListFragment extends Fragment {
             if (cursor != null && cursor.getCount() > 0) {
                 mMarkerListAdapter.swapCursor(cursor);
             } else {
-                // Mostrar empty state
+
             }
         }
     }

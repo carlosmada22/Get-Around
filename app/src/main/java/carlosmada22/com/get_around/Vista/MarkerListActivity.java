@@ -1,14 +1,16 @@
-package carlosmada22.com.get_around;
+package carlosmada22.com.get_around.Vista;
 
-import android.content.Intent;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.MenuItem;
 
+import carlosmada22.com.get_around.BaseDeDatos.DBAdapter;
+import carlosmada22.com.get_around.R;
+
 public class MarkerListActivity extends AppCompatActivity {
 
-    String nameLista;
+
     private DBAdapter mDBAdapter;
 
 
@@ -17,7 +19,7 @@ public class MarkerListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_marker_list);
 
-        Intent intent = getIntent();
+
         String name = getIntent().getExtras().getString("nameLista");
 
         MarkerListFragment fragment = (MarkerListFragment)
@@ -39,9 +41,6 @@ public class MarkerListActivity extends AppCompatActivity {
         mDBAdapter = new DBAdapter(getApplicationContext());
         mDBAdapter.open();
 
-        /*Intent intent = getIntent();
-        nameLista = getIntent().getExtras().getString("nameLista");
-        actionBar.setTitle(nameLista);*/
     }
     public boolean onOptionsItemSelected(MenuItem item){
         int id = item.getItemId();

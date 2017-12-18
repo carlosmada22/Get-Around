@@ -1,4 +1,4 @@
-package carlosmada22.com.get_around;
+package carlosmada22.com.get_around.BaseDeDatos;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -49,20 +49,6 @@ public class Lista_Tabla {
         return sqlDB.query(this.NOMBRE_TABLA,columns,null,null,null,null,null);
     }
 
-    public String getNombreLista(int id_lista){
-        String[] columns = {ColumnsLista.NAME};
-        String[] args = {String.valueOf(id_lista)};
-        String where = ColumnsLista._ID + "=?";
-        Cursor c = sqlDB.query(NOMBRE_TABLA,columns,where,args,null,null,null);
-        String name = "Lista";
-        if (c.moveToFirst()) {
-            do {
-                name = c.getString(0);
-
-            } while (c.moveToNext());
-        }
-        return name;
-    }
 
     public int updateLista(int id, String nombre){
         ContentValues values = new ContentValues();

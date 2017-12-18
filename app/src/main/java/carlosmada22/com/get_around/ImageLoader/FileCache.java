@@ -1,4 +1,4 @@
-package carlosmada22.com.get_around;
+package carlosmada22.com.get_around.ImageLoader;
 
 import java.io.File;
 import android.content.Context;

@@ -1,4 +1,4 @@
-package carlosmada22.com.get_around;
+package carlosmada22.com.get_around.BaseDeDatos;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -46,10 +46,6 @@ public class Lista_Marker_Tabla {
 
     }
 
-    public void deleteListaMarker(int id_marker, int id_lista){
-        String[] args = new String[]{String.valueOf(id_marker), String.valueOf(id_lista)};
-        sqlDB.execSQL("DELETE FROM lista_marker WHERE id_marker=? AND id_lista=?", args);
-    }
     public void deleteListaMarker(String id_marker, String id_lista){
         String[] args = new String[]{id_marker, id_lista};
         sqlDB.execSQL("DELETE FROM lista_marker WHERE id_marker=? AND id_lista=?", args);
@@ -72,13 +68,6 @@ public class Lista_Marker_Tabla {
         String[] columns = {ColumnsListaMarker.ID_MARKER};
         String[] args = {String.valueOf(idlista)};
         String where = ColumnsListaMarker.ID_LISTA + "=?";
-        return sqlDB.query(NOMBRE_TABLA,columns,where,args,null,null,null);
-    }
-
-    public Cursor getListofMarker(int idmarker){
-        String[] columns = {ColumnsListaMarker.ID_LISTA};
-        String[] args = {String.valueOf(idmarker)};
-        String where = ColumnsListaMarker.ID_MARKER + "=?";
         return sqlDB.query(NOMBRE_TABLA,columns,where,args,null,null,null);
     }
 

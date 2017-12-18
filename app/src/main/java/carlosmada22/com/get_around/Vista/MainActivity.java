@@ -1,13 +1,13 @@
-package carlosmada22.com.get_around;
+package carlosmada22.com.get_around.Vista;
 
-import android.app.SearchManager;
+
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.content.ContextCompat;
+
 import android.support.v4.view.ViewPager;
 
 import android.support.v7.app.ActionBar;
@@ -26,30 +26,30 @@ import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.ArrayList;
-import java.util.Iterator;
+
 import java.util.List;
+
+import carlosmada22.com.get_around.BaseDeDatos.DBAdapter;
+import carlosmada22.com.get_around.R;
+
+/**
+ * Created by carlosmada22 on 2/10/17.
+ */
 
 public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener {
 
     public static TabLayout tabLayout;
     public static ViewPager viewPager;
-    private SearchView searchView;
-    private MenuItem searchMenuItem;
-    private Menu menu;
-    public static ArrayList<Ciudades> cities;
+    public static Menu menu;
     private int[] tabIcons = {
             R.drawable.ic_action_map,
             R.drawable.ic_action_list,
     };
-    public static final String EXTRA_LIST_ID = "extra_list_id";
     DBAdapter mDBAdapter;
 
     List<String> nombres = new ArrayList<String>();
@@ -58,8 +58,10 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     List<String> descripciones = new ArrayList<String>();
     List<Integer> categorias = new ArrayList<Integer>();
     List<Integer> ids = new ArrayList<Integer>();
+    public static boolean mapType = false;
+    public static boolean eye = true;
 
-    boolean mostrar;
+    public static boolean mostrar;
 
 
     @Override
@@ -74,31 +76,10 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         actionBar.setIcon(R.mipmap.ic_icon_inside);
         actionBar.setTitle("GetAround");
 
-        cities = new ArrayList<>();
 
+        mDBAdapter = new DBAdapter((this));
+        mDBAdapter.open();
 
-
-
-
-        /*
-        TabHost tabs=(TabHost)findViewById(android.R.id.tabhost);
-        tabs.setup();
-        tabs.setup(mlam);
-
-        TabHost.TabSpec spec=tabs.newTabSpec("mitab1");
-        spec.setContent(new Intent(this, MapFragment.class));
-        spec.setIndicator("",
-                res.getDrawable(R.drawable.ic_action_list));
-        tabs.addTab(spec);
-
-        spec=tabs.newTabSpec("mitab2");
-        spec.setContent(R.id.tab2);
-        spec.setIndicator("",
-                res.getDrawable(R.drawable.ic_action_map));
-        tabs.addTab(spec);
-
-        tabs.setCurrentTab(0);
-        */
 
         viewPager = (ViewPager) findViewById(R.id.pager);
         setupViewPager(viewPager);
@@ -110,47 +91,10 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         mostrar = true;
 
 
-        /*
-        JSONArray array = new JSONArray();
-        try {
-            for(int i =0 ; i<array.length(); i++) {
-                JSONObject object = array.getJSONObject(1);
-                cities.add(new Ciudades(object.getDouble("lat"),object.getDouble("lon"),
-                        object.getString("wikipedia"),object.getString("city")));
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        */
-
-        try {
-            JSONObject cit = new JSONObject(loadJSONFromAsset());
-            Iterator x = cit.keys();
-            JSONArray jsonArray = new JSONArray();
-            while (x.hasNext()){
-                String key = (String) x.next();
-                jsonArray.put(cit.get(key));
-            }
-            try {
-                for(int i =0 ; i<jsonArray.length(); i++) {
-                    JSONObject object = jsonArray.getJSONObject(i);
-                    cities.add(new Ciudades(object.getDouble("lat"),object.getDouble("lon"),
-                            object.getString("wikipedia"),object.getString("city")));
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-
     }
 
     private void setUpTabIcons() {
-        //tabLayout.getTabAt(0).setText("MAPA");
         tabLayout.getTabAt(0).setIcon(tabIcons[0]);
-        //tabLayout.getTabAt(1).setText("LISTAS");
         tabLayout.getTabAt(1).setIcon(tabIcons[1]);
 
     }
@@ -196,18 +140,6 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_tb, menu);
         this.menu = menu;
-        /*searchMenuItem = menu.findItem(R.id.buscar);
-        SearchManager searchManager = (SearchManager) MainActivity.this.getSystemService(Context.SEARCH_SERVICE);
-        //searchView = (SearchView) searchMenuItem.getActionView();
-        //searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
-        if (searchMenuItem != null) {
-            searchView = (SearchView) searchMenuItem.getActionView();
-        }
-        if (searchView != null) {
-            searchView.setSearchableInfo(searchManager.getSearchableInfo(MainActivity.this.getComponentName()));
-        }
-        searchView.setSubmitButtonEnabled(true);
-        searchView.setOnQueryTextListener(this);*/
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -219,7 +151,6 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
     @Override
     public boolean onQueryTextChange(String newText) {
-        //ListFragment.listCursorAdapter.getFilter().filter(newText);
 
         return true;
     }
@@ -241,13 +172,17 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             if(MapFragment.gMap.getMapType() == GoogleMap.MAP_TYPE_NORMAL)
             {
                 MapFragment.gMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+                mapType = true;
             }
-            else
+            else {
                 MapFragment.gMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+                mapType = false;
+            }
             Toast.makeText(context,
                     "Tipo de mapa cambiado",
                     Toast.LENGTH_SHORT).show();
         }
+        Log.i("mapType", ""+mapType);
 
         if(id==R.id.list){
 
@@ -257,24 +192,28 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 Intent intent = new Intent(this, MapScreensActivity.class);
                 startActivity(intent);
             }
-            else Toast.makeText(context,
-                    "Aún no has guardado ningún mapa. Hazlo pulsando sobre él y después en el botón naranja de descarga.",
-                    Toast.LENGTH_LONG).show();
+            else {
+                Toast.makeText(context,
+                        "Aún no has guardado ningún mapa. Hazlo pulsando sobre él y después en el botón naranja de descarga.",
+                        Toast.LENGTH_LONG).show();
+                mDBAdapter.clearMapas();
+            }
+
 
         }
 
         else if(id==R.id.show) {
             if(mostrar) {
                 menu.findItem(R.id.show).setIcon(R.drawable.ic_action_hide);
+                eye = false;
                 Log.i("mostrar", ""+mostrar);
                 MapFragment.gMap.clear();
+                MapFragment.positionMarkers.clear();
                 mostrar = false;
             }
             else mostrar=true;
         }
         if (mostrar) {
-            mDBAdapter = new DBAdapter((context));
-            mDBAdapter.open();
 
             ids = new ArrayList<Integer>();
             nombres = new ArrayList<String>();
@@ -319,45 +258,17 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 name = nombres.get(i);
                 desc = descripciones.get(i);
                 colour = MapFragment.markerColor(categorias.get(i));
+                MapFragment.positionMarkers.add(location);
                 MapFragment.gMap.addMarker(new MarkerOptions().position(location).title(name).snippet(desc).icon(colour));
             }
             menu.findItem(R.id.show).setIcon(R.drawable.ic_action_show_all);
+            eye = true;
             mostrar = true;
         }
-            /*Toast.makeText(context,
-                    "Lista de mapas en construcción",
-                    Toast.LENGTH_SHORT).show();*/
-            //return true;
 
 
         return super.onOptionsItemSelected(item);
     }
-
-    public String loadJSONFromAsset() {
-        String json = null;
-        try {
-            InputStream is = this.getAssets().open("cities.json");
-            int size = is.available();
-            byte[] buffer = new byte[size];
-            is.read(buffer);
-            is.close();
-            json = new String(buffer, "UTF-8");
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-        Log.i("MA",json);
-        return json;
-    }
-
-    public static ArrayList<Ciudades> getCities() {
-        return cities;
-    }
-
-    public static void setCities(ArrayList<Ciudades> cities) {
-        MainActivity.cities = cities;
-    }
-
 
     @Override
     protected void onPause() {
@@ -366,7 +277,10 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
     @Override
     protected void onResume() {
+        Log.i("onResumeMain", "onResumeMain");
         super.onResume();
+        Log.i("mapType", ""+mapType);
+
     }
 
 

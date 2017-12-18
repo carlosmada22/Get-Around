@@ -1,7 +1,6 @@
-package carlosmada22.com.get_around;
+package carlosmada22.com.get_around.Vista;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 
@@ -10,15 +9,12 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
-import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v7.app.AlertDialog;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.CursorAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -31,19 +27,23 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import java.util.ArrayList;
 import java.util.List;
 
+import carlosmada22.com.get_around.Adaptadores.ListCursorAdapter;
+import carlosmada22.com.get_around.BaseDeDatos.DBAdapter;
+import carlosmada22.com.get_around.R;
+
+/**
+ * Created by carlosmada22 on 2/10/17.
+ */
+
 
 public class ListFragment extends Fragment {
 
     private ListView listList;
-    private static Context context;
     private TextView empty;
     private static DBAdapter mDBAdapter;
     private static ListCursorAdapter mListAdapter;
-    int laposicion;
-    String nombreActual;
     Cursor cur;
     Cursor cur2;
-    public static final int REQUEST_UPDATE_DELETE_LIST = 2;
 
     List<String> nombres = new ArrayList<String>();
     List<Double> latitudes = new ArrayList<Double>();
@@ -58,14 +58,18 @@ public class ListFragment extends Fragment {
 
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+    }
 
     public ListFragment() {
 
-    }
-
-    public static ListFragment newInstance() {
-        ListFragment fragment = new ListFragment();
-        return fragment;
     }
 
 
@@ -98,39 +102,6 @@ public class ListFragment extends Fragment {
         if(listas==null || listas.getCount()<=0) empty.setVisibility(View.VISIBLE);
 
         listList.setClickable(true);
-        /*AdapterView.OnItemClickListener myListViewClicked = new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                laposicion = i;
-                Log.d("onItemClick", "clicked Item");
-                AsyncTask task = new AsyncTask<Void, Void, Void>() {
-                    private int id_lis;
-                    private String name_lis;
-
-                    protected Void doInBackground(Void... voids) {
-                        cur = mDBAdapter.getListaListas();
-                        if (cur.moveToFirst()) {
-                            for (int k=0;k<laposicion;k++){
-                                cur.moveToNext();
-                            }
-                        }
-                        id_lis = cur.getInt(0);
-                        name_lis = cur.getString(1);
-                        return null;
-                    }
-
-                    protected void onPostExecute(Long result) {
-                        Intent intent = new Intent(getActivity(), MarkerListActivity.class);
-                        intent.putExtra("numLista", id_lis);
-                        Log.i("id_lista", ""+ id_lis);
-                        intent.putExtra("nameLista", name_lis);
-                        startActivity(intent);
-                    }
-                }.execute();
-            }
-        };
-
-        listList.setOnItemClickListener( myListViewClicked );*/
         listList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
@@ -178,6 +149,8 @@ public class ListFragment extends Fragment {
                                 createDialog(id_lis, name_lis);
                                 break;
                             case 1:
+                                MapFragment.imprimeVMarkers();
+                                MapFragment.positionMarkers.clear();
                                 MainActivity.viewPager.setCurrentItem(0);
                                 MapFragment.getgMap().clear();
                                 cur = mDBAdapter.getListaListas();
@@ -229,12 +202,13 @@ public class ListFragment extends Fragment {
                                     name = nombres.get(j);
                                     desc = descripciones.get(j);
                                     colour = MapFragment.markerColor(categorias.get(j));
+                                    MapFragment.positionMarkers.add(location);
                                     MapFragment.getgMap().addMarker(new MarkerOptions().position(location).title(name).snippet(desc).icon(colour));
                                 }
+                                MapFragment.imprimeVMarkers();
                                 break;
 
                             case 2:
-                                //cur = mDBAdapter.getListaListas();
                                 cur2 = mDBAdapter.getListaListas();
                                 int id_lista;
                                 if (cur2.moveToFirst()) {
@@ -251,7 +225,6 @@ public class ListFragment extends Fragment {
                                 cur2 = mDBAdapter.getListaListas();
                                 mListAdapter.swapCursor(cur2);
                                 listList.setAdapter(mListAdapter);
-                                //loadList();
                                 if (borrado){
                                     Toast.makeText(getContext(),
                                             "Lista eliminada",
@@ -309,38 +282,15 @@ public class ListFragment extends Fragment {
             }
         });
 
-
-        //loadMarkers();
         loadList();
         return root;
 
     }
-    /*private void loadMarkers() {
-
-        new MarkersLoadTask().execute();
-    }*/
 
     public static void loadList() {
 
         new ListLoadTask().execute();
     }
-
-    /*private class MarkersLoadTask extends AsyncTask<Void, Void, Cursor> {
-
-        @Override
-        protected Cursor doInBackground(Void... voids) {
-            return mDBAdapter.getMarkerLista();
-        }
-
-        @Override
-        protected void onPostExecute(Cursor cursor) {
-            if (cursor != null && cursor.getCount() > 0) {
-                mMarkersAdapter.swapCursor(cursor);
-            } else {
-                // Mostrar empty state
-            }
-        }
-    }*/
 
     private static class ListLoadTask extends AsyncTask<Void, Void, Cursor> {
 
@@ -354,7 +304,7 @@ public class ListFragment extends Fragment {
             if (cursor != null && cursor.getCount() > 0) {
                 mListAdapter.swapCursor(cursor);
             } else {
-                // Mostrar empty state
+
             }
         }
     }
@@ -378,17 +328,12 @@ public class ListFragment extends Fragment {
         final EditText nombre = (EditText) crear.findViewById(R.id.nombre) ;
         nombre.setText(nombre_lis);
         build.setTitle("Cambiar nombre lista");
-        build.setPositiveButton("Añadir", new DialogInterface.OnClickListener() {
+        build.setPositiveButton("Cambiar", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialogo, int which) {
                 String newname = nombre.getText().toString();
                 if (!newname.isEmpty()){
                     updateListaDB(id_lis, newname);
                     loadList();
-                }
-                else{
-                    Toast.makeText(getContext(),
-                            "Nombre obligatorio",
-                            Toast.LENGTH_SHORT).show();
                 }
             } });
 
@@ -427,12 +372,6 @@ public class ListFragment extends Fragment {
 
         }
     }
-
-    /*private void showAddScreen() {
-        Intent intent = new Intent(getActivity(), AddEditLawyerActivity.class);
-        startActivityForResult(intent, AddEditLawyerActivity.REQUEST_ADD_LAWYER);
-    }*/
-
 
 
 }

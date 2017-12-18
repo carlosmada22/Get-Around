@@ -1,25 +1,29 @@
-package carlosmada22.com.get_around;
+package carlosmada22.com.get_around.Vista;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
+
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+
 import android.location.Address;
+import android.location.Criteria;
 import android.location.Geocoder;
 import android.location.Location;
+import android.location.LocationManager;
+
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.MediaStore;
+import android.os.Handler;
+
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
@@ -32,7 +36,7 @@ import android.view.ViewGroup;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.internal.adb;
+
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -43,29 +47,38 @@ import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import android.Manifest;
+import android.view.ViewTreeObserver;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
+
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.ByteArrayOutputStream;
+
 import java.io.File;
-import java.io.FileNotFoundException;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import carlosmada22.com.get_around.BaseDeDatos.DBAdapter;
+import carlosmada22.com.get_around.R;
+
+/**
+ * Created by carlosmada22 on 2/10/17.
+ */
 
 
 public class MapFragment extends Fragment implements OnMapReadyCallback,
@@ -73,8 +86,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
         GoogleApiClient.OnConnectionFailedListener,
         LocationListener,
         GoogleMap.SnapshotReadyCallback,
-        View.OnClickListener{
-    DBAdapter mDBAdapter;
+        View.OnClickListener {
+    static DBAdapter mDBAdapter;
 
     List<String> nombres = new ArrayList<String>();
     List<Double> latitudes = new ArrayList<Double>();
@@ -83,10 +96,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
     List<Integer> categorias = new ArrayList<Integer>();
     List<Integer> id = new ArrayList<Integer>();
 
+    public static List<LatLng> positionMarkers = new ArrayList<LatLng>();
+
     private ImageButton btnClick;
     int category;
-    private Button btnType;
-    public static int nMap = 0;
     private EditText location_tf;
     private EditText mName;
     private EditText mDescription;
@@ -102,8 +115,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
     BitmapDescriptor color;
     String categoria = "";
     Cursor sLista;
-    LatLng ltln;
-    File out;
     static MapView gMapView;
     static GoogleMap gMap;
     GoogleApiClient mGoogleApiClient;
@@ -111,16 +122,82 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
     Location mLastLocation;
     Marker mCurrLocationMarker;
     Bitmap bitmap;
-    Bitmap bm;
-    boolean inlista;
 
-    public MapFragment(){
+    Handler myHandler;
+    int viewH;
+    int viewW;
+    LatLng ne;
+    LatLng sw;
+    float rotation;
+    private static double latitud, longitud;
 
+    LatLngBounds curScreen;
+
+    public MapFragment() {
+
+        //android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        Log.i("onCreate", "onCreate");
         super.onCreate(savedInstanceState);
+        myHandler = new Handler();
+
+
+        mDBAdapter = new DBAdapter((getContext()));
+        mDBAdapter.open();
+
+
+        id = new ArrayList<Integer>();
+        nombres = new ArrayList<String>();
+        latitudes = new ArrayList<Double>();
+        longitudes = new ArrayList<Double>();
+        descripciones = new ArrayList<String>();
+        categorias = new ArrayList<Integer>();
+
+        Log.i("SavedInstanceState", ""+savedInstanceState);
+
+
+        if (savedInstanceState == null) {
+            Log.i("Primera vez", "onCreate");
+            Cursor c = null;
+            c = mDBAdapter.getMarkerLista();
+
+            if (c.moveToFirst()) {
+                do {
+                    id.add(c.getInt(0));
+                    Log.i("id", "" + c.getInt(0));
+
+                    nombres.add(c.getString(1));
+                    Log.i("nombre", c.getString(1));
+
+                    latitudes.add(c.getDouble(2));
+                    Log.i("latitudes", "" + c.getDouble(2));
+
+                    longitudes.add(c.getDouble(3));
+                    Log.i("longitudes", "" + c.getDouble(3));
+
+                    descripciones.add(c.getString(4));
+                    Log.i("descripciones", c.getString(4));
+
+                    categorias.add(c.getInt(5));
+                    Log.i("categorias", "" + c.getInt(5));
+                } while (c.moveToNext());
+
+
+            }
+
+            LatLng location;
+            double latitude, longitude;
+            for (int i = 0; i < id.size(); i++) {
+                latitude = latitudes.get(i);
+                longitude = longitudes.get(i);
+                location = new LatLng(latitude, longitude);
+                positionMarkers.add(location);
+            }
+            setMarkers();
+        }
 
 
     }
@@ -128,28 +205,17 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_map, container, false);
+        final View view = inflater.inflate(R.layout.fragment_map, container, false);
         MapsInitializer.initialize(this.getContext());
         gMapView = (MapView) view.findViewById(R.id.mapView);
         gMapView.onCreate(savedInstanceState);
         gMapView.getMapAsync(this);
-        location_tf = (EditText)view.findViewById(R.id.TFaddress);
-        btnClick = (ImageButton) view.findViewById(R.id.Bsearch) ;
+        location_tf = (EditText) view.findViewById(R.id.TFaddress);
+        btnClick = (ImageButton) view.findViewById(R.id.Bsearch);
         btnClick.setOnClickListener(this);
-        if(!hasPermissions(getActivity(), PERMISSIONS)){
+        if (!hasPermissions(getActivity(), PERMISSIONS)) {
             ActivityCompat.requestPermissions(getActivity(), PERMISSIONS, PERMISSION_ALL);
         }
-        /*btnType = (Button) view.findViewById(R.id.Btype);
-        btnType.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if(gMap.getMapType() == GoogleMap.MAP_TYPE_NORMAL)
-                {
-                    gMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
-                }
-                else
-                    gMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
-            }
-        });*/
         fab = (FloatingActionButton) view.findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -160,7 +226,17 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
             }
         });
 
-
+        view.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                view.post(new Runnable() {
+                    public void run() {
+                        viewH = view.getHeight(); //height is ready
+                        viewW = view.getWidth(); //widht is ready
+                    }
+                });
+            }
+        });
 
         return view;
     }
@@ -170,17 +246,54 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
     public void onResume() {
         super.onResume();
         gMapView.onResume();
-        //Si estabamos en el mapa, volvemos al mapa
-        /*if (ListFragment.currentTabPosition == 1) {
-            TabLayout.Tab tab = MainActivity.tabLayout.getTabAt(1);
-            tab.select();
-        }*/
+        Log.i("onResume", "onResume");
+        if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            return;
+        }
+        if (gMap != null) {
+            gMap.setMyLocationEnabled(true);
+            LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+            Criteria criteria = new Criteria();
+
+            Location location = locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
+            if (location != null) {
+                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                gMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+                gMap.animateCamera(CameraUpdateFactory.zoomTo(13));
+            }
+        }
+        if(gMap != null) {
+            imprimeVMarkers();
+            gMap.clear();
+            setMarkers();
+        }
     }
 
     @Override
     public void onPause() {
         super.onPause();
         gMapView.onPause();
+        Log.i("onPause", "onPause");
+        imprimeVMarkers();
+        if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            return;
+        }
+        if (gMap != null) {
+            gMap.setMyLocationEnabled(true);
+            LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+            Criteria criteria = new Criteria();
+
+            Location location = locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
+            if (location != null) {
+                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                gMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+                gMap.animateCamera(CameraUpdateFactory.zoomTo(13));
+            }
+            gMap.clear();
+        }
+
     }
 
     @Override
@@ -207,14 +320,32 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
     }
 
 
+
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
 
+        Log.i("onMapReady", "onMapReady");
 
 
         gMap = googleMap;
 
+
+
+        gMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
+            @Override
+            public void onMapLoaded() {
+
+                setMarkers();
+                Log.i("mapTypeMAP", "" + MainActivity.mapType);
+
+                if(MainActivity.mapType) gMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+                if(!MainActivity.eye) MainActivity.menu.findItem(R.id.show).setIcon(R.drawable.ic_action_hide);
+            }
+        });
+
         gMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+
 
         //Initialize Google Play Services
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -224,64 +355,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                 buildGoogleApiClient();
                 gMap.setMyLocationEnabled(true);
             }
-        }
-        else {
+        } else {
             buildGoogleApiClient();
             gMap.setMyLocationEnabled(true);
         }
 
 
-        mDBAdapter = new DBAdapter((getContext()));
-        mDBAdapter.open();
-
-
-
-
-        id = new ArrayList<Integer>();
-        nombres = new ArrayList<String>();
-        latitudes = new ArrayList<Double>();
-        longitudes = new ArrayList<Double>();
-        descripciones = new ArrayList<String>();
-        categorias = new ArrayList<Integer>();
-
-        Cursor c = null;
-        c = mDBAdapter.getMarkerLista();
-
-        if (c.moveToFirst()) {
-            do {
-                id.add(c.getInt(0));
-                Log.i("id",""+c.getInt(0));
-
-                nombres.add(c.getString(1));
-                Log.i("nombre",c.getString(1));
-
-                latitudes.add(c.getDouble(2));
-                Log.i("latitudes",""+c.getDouble(2));
-
-                longitudes.add(c.getDouble(3));
-                Log.i("longitudes",""+c.getDouble(3));
-
-                descripciones.add(c.getString(4));
-                Log.i("descripciones",c.getString(4));
-
-                categorias.add(c.getInt(5));
-                Log.i("categorias",""+c.getInt(5));
-            } while (c.moveToNext());
-
-        }
-        LatLng location;
-        double latitude, longitude;
-        String name, desc;
-        BitmapDescriptor colour;
-        for (int i=0; i<id.size();i++){
-            latitude = latitudes.get(i);
-            longitude = longitudes.get(i);
-            location = new LatLng(latitude, longitude);
-            name = nombres.get(i);
-            desc = descripciones.get(i);
-            colour = markerColor(categorias.get(i));
-            gMap.addMarker(new MarkerOptions().position(location).title(name).snippet(desc).icon(colour));
-        }
 
         gMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
@@ -293,6 +372,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                         saveScreen();
                     }
                 });
+                Log.i("LatLng", "" + latLng);
             }
         });
         gMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
@@ -306,7 +386,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                 mDescription = (EditText) mView.findViewById(R.id.etDescription);
                 mspinner = (Spinner) mView.findViewById(R.id.spColor);
                 bList = (ImageButton) mView.findViewById(R.id.Badd);
-                mspinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
+                mspinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 
                     @Override
                     public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
@@ -365,21 +445,22 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                 mAdd.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        if(!mName.getText().toString().isEmpty()){
+                        if (!mName.getText().toString().isEmpty()) {
                             MarkerOptions marker = new MarkerOptions()
                                     .position(new LatLng(point.latitude, point.longitude))
                                     .title(mName.getText().toString())
                                     .snippet(mDescription.getText().toString())
                                     .icon(color);
                             gMap.addMarker(marker);
+                            positionMarkers.add(new LatLng(point.latitude,point.longitude));
                             Toast.makeText(getContext(),
                                     "Punto de interés añadido",
                                     Toast.LENGTH_SHORT).show();
                             //addMarkerDB(point);
-                            lastIdMarker = mDBAdapter.insertarMarker(mName.getText().toString(), point.latitude, point.longitude, mDescription.getText().toString(), (int)mspinner.getSelectedItemId());
+                            lastIdMarker = mDBAdapter.insertarMarker(mName.getText().toString(), point.latitude, point.longitude, mDescription.getText().toString(), (int) mspinner.getSelectedItemId());
                             ListFragment.loadList();
                             int id_marker = lastIdMarker;
-                            if(mDBAdapter.checkLista(lista)&&mDBAdapter.crearListaMarker(id_marker, lista)){
+                            if (mDBAdapter.checkLista(lista) && mDBAdapter.crearListaMarker(id_marker, lista)) {
                                 Log.i("id_marker_map", "" + id_marker);
                                 Toast.makeText(getContext(),
                                         "Marker añadido a la lista",
@@ -387,14 +468,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
 
                             }
                             Cursor c = mDBAdapter.getListMarkers(lista);
-                            if (c.moveToFirst()){
-                                do{
+                            if (c.moveToFirst()) {
+                                do {
                                     Log.i("id_marker", "" + c.getInt(0));
                                     Log.i("name_marker", "" + c.getString(1));
-                                }while (c.moveToNext());
+                                } while (c.moveToNext());
                             }
                             dialog.dismiss();
-                        }else{
+                        } else {
                             Toast.makeText(getContext(),
                                     "Campo *Nombre* obligatorio",
                                     Toast.LENGTH_SHORT).show();
@@ -403,7 +484,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                 });
                 mCancel.setOnClickListener(new View.OnClickListener() {
                     @Override
-                    public void onClick(View view){
+                    public void onClick(View view) {
                         dialog.dismiss();
                     }
                 });
@@ -411,15 +492,15 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                 bList.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        Cursor c =null;
+                        Cursor c = null;
                         Log.i("listas", "c=null");
                         c = mDBAdapter.getListaListas();
                         CharSequence lists[] = new CharSequence[c.getCount()];
                         int pos = 0;
-                        if (c.moveToFirst()){
-                            do{
+                        if (c.moveToFirst()) {
+                            do {
                                 lists[pos] = c.getString(1);
-                                Log.i("listas",c.getString(1));
+                                Log.i("listas", c.getString(1));
                                 pos++;
                             } while (c.moveToNext());
                         }
@@ -430,7 +511,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                             public void onClick(DialogInterface dialog, int which) {
                                 sLista = mDBAdapter.getListaListas();
                                 if (sLista.moveToFirst()) {
-                                    for (int k=0;k<which;k++){
+                                    for (int k = 0; k < which; k++) {
                                         sLista.moveToNext();
                                     }
                                 }
@@ -455,13 +536,31 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                 });
 
 
-
                 return false;
             }
         });
 
-        onResume();
+        gMap.setOnCameraIdleListener(new GoogleMap.OnCameraIdleListener() {
+            @Override
+            public void onCameraIdle() {
+                LatLngBounds bounds = gMap.getProjection().getVisibleRegion().latLngBounds;
+                ne = bounds.northeast;
+                sw = bounds.southwest;
+
+                rotation = gMap.getCameraPosition().bearing;
+                Log.i("LatLng NE moved", ""+ ne);
+                Log.i("LatLng SW moved", ""+ sw);
+            }
+        });
+
+
+
+
+
+
     }
+
+
 
 
     public static GoogleMap getgMap() {
@@ -479,7 +578,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
         mLocationRequest.setInterval(1000);
         mLocationRequest.setFastestInterval(1000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-        if (ContextCompat.checkSelfPermission(getContext(),
+        if (ContextCompat.checkSelfPermission((Activity)getContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
@@ -500,13 +599,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
             mCurrLocationMarker.remove();
         }
 
-        //Place current location marker
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-        MarkerOptions markerOptions = new MarkerOptions();
-        markerOptions.position(latLng);
-        markerOptions.title("Current Position");
-        markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
-        mCurrLocationMarker = gMap.addMarker(markerOptions);
+
 
         //move map camera
         gMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
@@ -549,45 +643,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
     public static final int MY_PERMISSIONS_REQUEST_STORAGE = 200;
     public static final int MY_PERMISSIONS_REQUEST_STORAGE_READ = 201;
-    public boolean checkLocationPermission(){
-        if (ContextCompat.checkSelfPermission(getContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            // Asking user if explanation is needed
-            if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
-                    Manifest.permission.ACCESS_FINE_LOCATION)) {
-
-                // Show an expanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
-                //Prompt the user once explanation has been shown
-                ActivityCompat.requestPermissions(getActivity(),
-                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        MY_PERMISSIONS_REQUEST_LOCATION);
 
 
-            } else {
-                // No explanation needed, we can request the permission.
-                ActivityCompat.requestPermissions(getActivity(),
-                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        MY_PERMISSIONS_REQUEST_LOCATION);
-            }
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    @TargetApi(23)
-    protected void askPermissions() {
-        String[] permissions = {
-                "android.permission.READ_EXTERNAL_STORAGE",
-                "android.permission.WRITE_EXTERNAL_STORAGE"
-        };
-        ActivityCompat.requestPermissions(getActivity(),permissions,MY_PERMISSIONS_REQUEST_STORAGE);
-    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -669,14 +726,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                 }
             }
 
-
-
-            // other 'case' lines to check for other permissions this app might request.
-            //You can add here other case statements according to your requirement.
         }
     }
 
-    public void onFabClick (final Marker mMarker){
+    public void onFabClick(final Marker mMarker) {
         lista = -1;
         AlertDialog.Builder mBuilder = new AlertDialog.Builder(getContext());
         View view = getActivity().getLayoutInflater().inflate(R.layout.dialog_edit, null);
@@ -692,7 +745,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
         etName.setText(mMarker.getTitle());
         etDescription.setText(mMarker.getSnippet());
         spinner.setSelection(getCategoria(mMarker));
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
@@ -749,42 +802,59 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
         bList.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Cursor c =null;
+                Cursor c = null;
                 Log.i("listas", "c=null");
                 c = mDBAdapter.getListaListas();
-                CharSequence lists[] = new CharSequence[c.getCount()];
-                int pos = 0;
-                if (c.moveToFirst()){
-                    do{
-                        lists[pos] = c.getString(1);
-                        Log.i("listas",c.getString(1));
-                        pos++;
-                    } while (c.moveToNext());
-                }
-                AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                builder.setTitle("Elige una lista");
-                builder.setItems(lists, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        sLista = mDBAdapter.getListaListas();
-                        if (sLista.moveToFirst()) {
-                            for (int k=0;k<which;k++){
-                                sLista.moveToNext();
-                            }
-                        }
-                        lista = sLista.getInt(0);
-                        //if (lista != "") inlista = true;
-                        Log.i("id_lista_map", "" + lista);
+                if (c.getCount() != 0 && c !=null) {
+                    CharSequence lists[] = new CharSequence[c.getCount()];
+                    int pos = 0;
+                    if (c.moveToFirst()) {
+                        do {
+                            lists[pos] = c.getString(1);
+                            Log.i("listas", c.getString(1));
+                            pos++;
+                        } while (c.moveToNext());
                     }
-                });
-                builder.show();
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                    builder.setTitle("Elige una lista");
+                    builder.setItems(lists, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            sLista = mDBAdapter.getListaListas();
+                            if (sLista.moveToFirst()) {
+                                for (int k = 0; k < which; k++) {
+                                    sLista.moveToNext();
+                                }
+                            }
+                            lista = sLista.getInt(0);
+
+                            Log.i("id_lista_map", "" + lista);
+                        }
+                    });
+                    builder.show();
+                }
+                else{
+                    CharSequence lists[] = {"¿Cómo hacerlo?"};
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                    builder.setTitle("No has añadido ninguna lista");
+                    builder.setItems(lists, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Toast.makeText(getContext(),
+                                    "Para crear una lista, en la pestaña de listas (izquierda) pulsa sobre el botón (+), dale un nombre y pulsa en 'Añadir'",
+                                    Toast.LENGTH_LONG).show();
+
+                        }
+                    });
+                    builder.show();
+                }
             }
         });
 
         bModify.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(!etName.getText().toString().isEmpty()){
+                if (!etName.getText().toString().isEmpty()) {
                     MarkerOptions marker = new MarkerOptions()
                             .position(mMarker.getPosition())
                             .title(etName.getText().toString())
@@ -794,17 +864,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                     gMap.addMarker(marker);
                     ListFragment.loadList();
                     int id_marker;
-                    if (mDBAdapter.checkMarker(marker.getPosition().latitude,marker.getPosition().longitude)){
-                        id_marker = mDBAdapter.getIdMarker(marker.getPosition().latitude,marker.getPosition().longitude);
+                    if (mDBAdapter.checkMarker(marker.getPosition().latitude, marker.getPosition().longitude)) {
+                        id_marker = mDBAdapter.getIdMarker(marker.getPosition().latitude, marker.getPosition().longitude);
                         updateMarkerDB(mMarker.getPosition());
-                    }
-                    else{
+                    } else {
                         Cursor c = mDBAdapter.getMarkerLista();
                         c.moveToLast();
-                        id_marker = c.getInt(0) +1;
-                        mDBAdapter.insertarMarker(etName.getText().toString(),marker.getPosition().latitude,marker.getPosition().longitude,etDescription.getText().toString(), category);
+                        id_marker = c.getInt(0) + 1;
+                        mDBAdapter.insertarMarker(etName.getText().toString(), marker.getPosition().latitude, marker.getPosition().longitude, etDescription.getText().toString(), category);
                     }
-                    if(mDBAdapter.checkLista(lista)&&mDBAdapter.crearListaMarker(id_marker, lista)){
+                    if (mDBAdapter.checkLista(lista) && mDBAdapter.crearListaMarker(id_marker, lista)) {
                         Toast.makeText(getContext(),
                                 "Marker añadido a la lista",
                                 Toast.LENGTH_SHORT).show();
@@ -817,9 +886,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                             saveScreen();
                         }
                     });
-                    //addMarkerDB(marker.getPosition());- Metodo modificar en base de datos
                     dialog.dismiss();
-                }else{
+                } else {
                     Toast.makeText(getContext(),
                             "Campo *Nombre* obligatorio",
                             Toast.LENGTH_SHORT).show();
@@ -834,10 +902,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                 build.setTitle("¿Deseas eliminar el punto de interés?");
                 build.setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogo, int which) {
-                        int id_marker = mDBAdapter.getIdMarker(mMarker.getPosition().latitude,mMarker.getPosition().longitude);
+                        int id_marker = mDBAdapter.getIdMarker(mMarker.getPosition().latitude, mMarker.getPosition().longitude);
                         mMarker.remove();
-                        mDBAdapter.deleteMarker(mMarker.getPosition().latitude,mMarker.getPosition().longitude);
+                        mDBAdapter.deleteMarker(mMarker.getPosition().latitude, mMarker.getPosition().longitude);
                         mDBAdapter.deleteMarkerFromAll(id_marker);
+                        positionMarkers.remove(mMarker.getPosition());
                         ListFragment.loadList();
                         dialogo.dismiss();
                         dialog.dismiss();
@@ -849,15 +918,15 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
 
                             }
                         });
-                        //mDBAdapter.deleteMarker() --> Metodo eliminar marker base de datos
-                    } });
+                    }
+                });
 
 
                 build.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogo, int which) {
                         dialogo.dismiss();
-                        //fab.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_action_download));
-                    } });
+                    }
+                });
                 build.show();
             }
         });
@@ -878,48 +947,35 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
 
     }
 
-    public void onClick(View view)
-    {
+    public void onClick(View view) {
 
         location = location_tf.getText().toString();
         List<Address> addressList = null;
-        if(!location.equals(""))
-        {
+        if (!location.equals("")) {
             Geocoder geocoder = new Geocoder(getContext());
             try {
-                addressList = geocoder.getFromLocationName(location , 1);
+                addressList = geocoder.getFromLocationName(location, 1);
 
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            if (addressList != null && !addressList.isEmpty() && addressList.get(0) != null ) {
+            if (addressList != null && !addressList.isEmpty() && addressList.get(0) != null) {
                 Address address = addressList.get(0);
                 LatLng latLng = new LatLng(address.getLatitude(), address.getLongitude());
                 gMap.addMarker(new MarkerOptions().position(latLng).title(location_tf.getText().toString()));
                 gMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
-            }
-            else {
+            } else {
                 Toast.makeText(getContext(),
                         "No se ha encontrado ningún resultado",
                         Toast.LENGTH_SHORT).show();
 
             }
 
-        }
-    }
-    private void addMarkerDB(LatLng point){
-        String nombre = "";
-        if (mName!= null){
-            nombre = mName.getText().toString();
-        }
-        if(TextUtils.isEmpty(nombre)){
-            mName.setError("Introduzca un nombre");
-        }
-
-        new addMarkerBDTask(nombre, point.latitude, point.longitude, mDescription.getText().toString(), (int)mspinner.getSelectedItemId()).execute();
-
+        } else Toast.makeText(getContext(),
+                "Introduzca una dirección",
+                Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -927,76 +983,81 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
 
     }
 
-    public int getCategoria(Marker marker){
+    public int getCategoria(Marker marker) {
         double lat = marker.getPosition().latitude;
         double lon = marker.getPosition().longitude;
         int categoria = mDBAdapter.getCategoria(lat, lon);
         return categoria;
     }
 
-    private class addMarkerBDTask extends AsyncTask<Void, Void, Boolean>{
+    private class addMarkerBDTask extends AsyncTask<Void, Void, Boolean> {
         String nombre, descripcion;
         double latitud, longitud;
         int categoria;
 
-        public addMarkerBDTask(String nombre,double latitud, double longitud, String descripcion, int categoria){
-            this.nombre=nombre;
-            this.descripcion=descripcion;
-            this.latitud=latitud;
-            this.longitud=longitud;
-            this.categoria=categoria;
+        public addMarkerBDTask(String nombre, double latitud, double longitud, String descripcion, int categoria) {
+            this.nombre = nombre;
+            this.descripcion = descripcion;
+            this.latitud = latitud;
+            this.longitud = longitud;
+            this.categoria = categoria;
         }
+
         @Override
-        protected Boolean doInBackground(Void... voids){
-            int themark = mDBAdapter.insertarMarker(nombre,latitud,longitud,descripcion,categoria);
+        protected Boolean doInBackground(Void... voids) {
+            int themark = mDBAdapter.insertarMarker(nombre, latitud, longitud, descripcion, categoria);
             return (themark > 0);
         }
+
         @Override
-        protected void onPostExecute(Boolean bool){
+        protected void onPostExecute(Boolean bool) {
             getActivity().setResult(Activity.RESULT_OK);
 
         }
     }
-    private void updateMarkerDB(LatLng point){
+
+    private void updateMarkerDB(LatLng point) {
         String nombre = "";
-        if (etName != null){
+        if (etName != null) {
             nombre = etName.getText().toString();
         }
-        if(TextUtils.isEmpty(nombre)){
+        if (TextUtils.isEmpty(nombre)) {
             mName.setError("Introduzca un nombre");
         }
 
-        new updateMarkerBDTask(nombre, point.latitude, point.longitude, etDescription.getText().toString(), (int)spinner.getSelectedItemId()).execute();
+        new updateMarkerBDTask(nombre, point.latitude, point.longitude, etDescription.getText().toString(), (int) spinner.getSelectedItemId()).execute();
 
     }
 
-    private class updateMarkerBDTask extends AsyncTask<Void, Void, Boolean>{
+    private class updateMarkerBDTask extends AsyncTask<Void, Void, Boolean> {
         String nombre, descripcion;
         double latitud, longitud;
         int categoria;
 
-        public updateMarkerBDTask(String nombre,double latitud, double longitud, String descripcion, int categoria){
-            this.nombre=nombre;
-            this.descripcion=descripcion;
-            this.latitud=latitud;
-            this.longitud=longitud;
-            this.categoria=categoria;
+        public updateMarkerBDTask(String nombre, double latitud, double longitud, String descripcion, int categoria) {
+            this.nombre = nombre;
+            this.descripcion = descripcion;
+            this.latitud = latitud;
+            this.longitud = longitud;
+            this.categoria = categoria;
         }
+
         @Override
-        protected Boolean doInBackground(Void... voids){
-            mDBAdapter.updateMarker(nombre,latitud,longitud,descripcion,categoria);
+        protected Boolean doInBackground(Void... voids) {
+            mDBAdapter.updateMarker(nombre, latitud, longitud, descripcion, categoria);
             return true;
         }
+
         @Override
-        protected void onPostExecute(Boolean bool){
+        protected void onPostExecute(Boolean bool) {
             getActivity().setResult(Activity.RESULT_OK);
 
         }
     }
 
-    public static BitmapDescriptor markerColor (int categoria){
+    public static BitmapDescriptor markerColor(int categoria) {
         BitmapDescriptor colour = null;
-        switch (categoria){
+        switch (categoria) {
             case 0:
                 colour = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE);
                 break;
@@ -1028,18 +1089,18 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
                 colour = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA);
 
 
-
         }
         return colour;
     }
-    public Bitmap captureScreen()
-    {
-        GoogleMap.SnapshotReadyCallback callback = new GoogleMap.SnapshotReadyCallback()
-        {
+
+    public Bitmap captureScreen() {
+        CameraPosition oldPos = gMap.getCameraPosition();
+        CameraPosition pos = CameraPosition.builder(oldPos).bearing(0).build();
+        gMap.moveCamera(CameraUpdateFactory.newCameraPosition(pos));
+        GoogleMap.SnapshotReadyCallback callback = new GoogleMap.SnapshotReadyCallback() {
 
             @Override
-            public void onSnapshotReady(Bitmap snapshot)
-            {
+            public void onSnapshotReady(Bitmap snapshot) {
                 bitmap = snapshot;
             }
         };
@@ -1048,48 +1109,79 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
         return bitmap;
     }
 
-    public void saveScreen(){
-        captureScreen();
-        AlertDialog.Builder build = new AlertDialog.Builder(getContext());
-        View crear = getActivity().getLayoutInflater().inflate(R.layout.save_screen_dialog, null);
-        final EditText nombre = (EditText) crear.findViewById(R.id.nombre_mapa) ;
-        ImageView imageView= (ImageView) crear.findViewById(R.id.selectedImage);
-        //imageView.setImageBitmap(bitmap);
-        build.setTitle("Guardar mapa");
+    public void saveScreen() {
+        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
-        build.setPositiveButton("Guardar", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialogo, int which) {
-                File folder = new File(getContext().getApplicationContext().getFilesDir().getAbsolutePath() + "/Maps/");
-                if (!folder.exists()) {
-                    folder.mkdirs();
-                }
-                String fileName = nombre.getText().toString() + ".jpg";
-                //File file = new File (new File(getContext().getApplicationContext().getFilesDir().getAbsolutePath() + "/Maps/"), fileName);
-                if(createDirectoryAndSaveFile(bitmap,fileName)){
-                    Toast.makeText(getContext(),
-                            "Descarga realizada",
-                            Toast.LENGTH_SHORT).show();
-                }
-                else{
-                    Toast.makeText(getContext(),
-                            "Descarga fallida",
-                            Toast.LENGTH_SHORT).show();
-                }
-            } });
+        }
+        gMap.setMyLocationEnabled(false);
+        int time=500; // in milliseconds
+
+        Handler h=new Handler();
+
+        h.postDelayed(new Runnable() {
+
+            @Override
+            public void run() {
+
+                captureScreen();
+                AlertDialog.Builder build = new AlertDialog.Builder(getContext());
+                View crear = getActivity().getLayoutInflater().inflate(R.layout.save_screen_dialog, null);
+                final EditText nombre = (EditText) crear.findViewById(R.id.nombre_mapa) ;
+                build.setTitle("Guardar mapa");
+
+                build.setPositiveButton("Guardar", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialogo, int which) {
+                        File folder = new File(getContext().getApplicationContext().getFilesDir().getAbsolutePath() + "/Maps/");
+                        if (!folder.exists()) {
+                            folder.mkdirs();
+                        }
+                        String fileNameNOJPG = nombre.getText().toString();
+
+                        String final_name = compruebaMapa(fileNameNOJPG);
+
+                        if(!final_name.isEmpty()) {
 
 
-        build.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialogo, int which) {
-                dialogo.dismiss();
-            } });
-        build.setView(crear);
-        AlertDialog nueva_lista = build.create();
-        nueva_lista.show();
+
+                            if (createDirectoryAndSaveFile(bitmap, final_name)) {
+                                Toast.makeText(getContext(),
+                                        "Descarga realizada",
+                                        Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(getContext(),
+                                        "Descarga fallida",
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                        else Toast.makeText(getContext(),
+                                "Nombre obligatorio",
+                                Toast.LENGTH_SHORT).show();
+                    } });
+
+
+                build.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialogo, int which) {
+                        dialogo.dismiss();
+                    } });
+                build.setView(crear);
+                AlertDialog nueva_lista = build.create();
+                nueva_lista.show();
+                if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+                    return;
+                }
+                gMap.setMyLocationEnabled(true);
+
+            }
+
+        },time);
+
     }
 
 
     private boolean createDirectoryAndSaveFile(Bitmap imageToSave, String fileName) {
 
+        String final_name = fileName + ".jpg";
         File direct = new File(Environment.getExternalStorageDirectory() + "/Maps");
         boolean creado = false;
         if (!direct.exists()) {
@@ -1097,7 +1189,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
             wallpaperDirectory.mkdirs();
         }
 
-        File file = new File(new File("/sdcard/Maps/"), fileName);
+        File file = new File(new File("/sdcard/Maps/"), final_name);
         if (file.exists()) {
             file.delete();
         }
@@ -1109,11 +1201,93 @@ public class MapFragment extends Fragment implements OnMapReadyCallback,
         } catch (Exception e) {
             e.printStackTrace();
         }
+        saveValues(fileName);
         return creado;
     }
 
+    public void saveValues (String fileName){
 
-    public void onBackPressed() {
-        getActivity().moveTaskToBack(true);
+
+        File f = new File("/storage/emulated/0/Maps/" + fileName);
+
+
+        curScreen = gMap.getProjection().getVisibleRegion().latLngBounds;
+
+
+
+        double latC = curScreen.getCenter().latitude;
+        double lonC = curScreen.getCenter().longitude;
+        float zoom = gMap.getCameraPosition().zoom;
+        double latne = ne.latitude;
+        double longne = ne.longitude;
+        double latsw = sw.latitude;
+        double longsw = sw.longitude;
+
+
+        Log.i("LatlngCenter", "" + latC + "///" + lonC);
+
+        Log.i("latne", "" + latne);
+        Log.i("longne", "" + longne);
+        Log.i("latsw", "" + latsw);
+        Log.i("longsw", "" + longsw);
+
+
+        int id_map = mDBAdapter.crearMapa(fileName,latne,longne,latsw,longsw,rotation,latC,lonC);
+        Log.i("id_map",""+id_map);
+
+
+    }
+
+    public static String compruebaMapa(String name){
+        String final_name = name;
+        int i=0;
+
+        while (mDBAdapter.checkMapa(final_name)){
+            final_name = name + "(" + i + ")";
+            i++;
+        }
+        return final_name;
+    }
+
+    public static double getLatitud() {
+        return latitud;
+    }
+
+    public static void setLatitud(double latitud) {
+        MapFragment.latitud = latitud;
+    }
+
+    public static double getLongitud() {
+        return longitud;
+    }
+
+    public static void setLongitud(double longitud) {
+        MapFragment.longitud = longitud;
+    }
+
+
+    public static void setMarkers(){
+        if (gMap != null) {
+            gMap.clear();
+            Cursor c = null;
+            for (int i = 0; i < positionMarkers.size(); i++) {
+                c = mDBAdapter.getMarker(positionMarkers.get(i).latitude, positionMarkers.get(i).longitude);
+                if (c.moveToFirst()) {
+                    MarkerOptions marker = new MarkerOptions()
+                            .position(new LatLng(c.getDouble(2), c.getDouble(3)))
+                            .title(c.getString(1))
+                            .snippet(c.getString(4))
+                            .icon(markerColor(c.getInt(5)));
+                    gMap.addMarker(marker);
+                }
+            }
+        }
+    }
+
+    public static void imprimeVMarkers(){
+        for (int i=0; i<positionMarkers.size(); i++){
+            Log.i("lat" + i, ""+positionMarkers.get(i).latitude);
+            Log.i("lon" + i, ""+positionMarkers.get(i).longitude);
+        }
     }
 }

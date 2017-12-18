@@ -1,8 +1,4 @@
-package carlosmada22.com.get_around;
-
-import android.content.ContentValues;
-
-import java.util.UUID;
+package carlosmada22.com.get_around.Modelo;
 
 /**
  * Created by carlosmada22 on 22/9/17.
